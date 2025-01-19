@@ -5,12 +5,30 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 public class FirstTest {
     private WebDriver driver;
 
-    private void testSleep() throws InterruptedException {
-        Thread.sleep(1000);
+    private String getUrl() throws IOException {
+        Properties properties = new Properties();
+        InputStream input = ClassLoader.getSystemResourceAsStream("config.properties");
+        properties.load(input);
+
+        return properties.getProperty("url");
+    }
+
+    private WebElement getElement(By condition) {
+        WebElement result = driver.findElement(condition);
+        WebDriverWait wait = new WebDriverWait(driver, 5);
+        wait.until(ExpectedConditions.presenceOfElementLocated(condition));
+
+        return result;
     }
 
     @BeforeAll
@@ -19,9 +37,9 @@ public class FirstTest {
     }
 
     @BeforeEach
-    public void webDriverStart() {
+    public void webDriverStart() throws IOException {
         driver = new ChromeDriver();
-        driver.get("https://otus.home.kartushin.su/training.html");
+        driver.get(getUrl());
     }
 
     @AfterEach
@@ -32,15 +50,14 @@ public class FirstTest {
 
     @Test
     @DisplayName("1 - Ввод текста")
-    public void enterText() throws InterruptedException {
+    public void enterText() {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless"); // --headless нужен для запуска автотеста без активного окна браузера
 
-        WebElement element = driver.findElement(By.id("textInput"));
         String inputValue = "OTUS";
 
+        WebElement element = getElement(By.id("textInput"));
         element.sendKeys(inputValue);
-        testSleep();
 
         Assertions.assertEquals(
                 inputValue,
@@ -50,45 +67,39 @@ public class FirstTest {
 
     @Test
     @DisplayName("2 - Модальное окно")
-    public void modularWindow() throws InterruptedException {
+    public void modularWindow() {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--kiosk");
 
         // Нажатие кнопки для вызова модульного кона
-        WebElement element = driver.findElement(By.id("openModalBtn"));
-        element.click();
+        WebElement moduleButton = getElement(By.id("openModalBtn"));
+        moduleButton.click();
 
         // Обработка модульного окна
-        WebElement modal = driver.findElement(By.id("myModal"));
-        Assertions.assertNotNull(modal); // Не уверен, что решение правильное
-        testSleep();
+        WebElement moduleWindow = getElement(By.id("myModal"));
+        Assertions.assertNotNull(moduleWindow); // Не уверен, что решение правильное
     }
 
     @Test
     @DisplayName("3 - Регистрация")
-    public void registration() throws InterruptedException {
+    public void registration() {
         driver.manage().window().fullscreen();
         String userName = "Pavel";
         String mail = "pavel@mail.ru";
 
-        WebElement name = driver.findElement(By.id("name"));
+        WebElement name = getElement(By.id("name"));
         name.sendKeys(userName);
-        testSleep();
 
-        WebElement email = driver.findElement(By.id("email"));
+        WebElement email = getElement(By.id("email"));
         email.sendKeys(mail);
-        testSleep();
 
-        WebElement submitButton = driver.findElement(By.cssSelector("#sampleForm > button"));
+        WebElement submitButton = getElement(By.cssSelector("#sampleForm > button"));
         submitButton.click();
-        testSleep();
 
-        WebElement dinamicResponse = driver.findElement(By.id("messageBox"));
+        WebElement dynamicResponse = getElement(By.id("messageBox"));
         Assertions.assertEquals(
                 String.format("Форма отправлена с именем: %s и email: %s", userName, mail),
-                dinamicResponse.getText()
+                dynamicResponse.getText()
         );
-
-
     }
 }
